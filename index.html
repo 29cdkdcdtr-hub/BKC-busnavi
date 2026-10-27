@@ -1,0 +1,462 @@
+<title>BKCバスナビ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: 1 column, phone first. Sticky clock bar on top, "next bus" cards first, hourly timetable below. Line colours identify each bus route everywhere. */
+:root{
+  /* Black theme: departure-board look. Amber = UI accent, red = direct shuttle only. */
+  --bg:#09090b; --surface:#18181d; --surface2:#26262e; --ink:#f4f4f6; --ink2:#a6a6b2; --rule:#40404b;
+  --accent:#ffb21a; --accent-ink:#141006;
+  --sh:#ff5468; --net:#b3b9c7;
+  --warn-bg:#2e2410; --warn-ink:#f5d98b;
+  --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --f-num:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);padding-block:12px 10px;border-bottom:1px solid var(--rule);margin-inline:-4px;padding-inline:4px}
+.bar-in{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand b{font-weight:900;font-size:20px;letter-spacing:.02em}
+.brand span{font-size:12px;color:var(--ink2)}
+.clock{display:flex;align-items:baseline;gap:10px}
+.clock .t{font-family:var(--f-num);font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1}
+.clock .d{font-size:13px;color:var(--ink2)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:10px;padding:3px;gap:3px}
+.tabs button,.seg button{border:0;background:transparent;padding:8px 10px;border-radius:8px;font-weight:700;color:var(--ink2);min-height:40px}
+.tabs button[aria-selected="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* day type */
+.daybox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.pill.soft{background:var(--surface2);color:var(--ink)}
+.daybox label{display:inline-flex;align-items:center;gap:6px;color:var(--ink2)}
+.daybox select,.daybox input{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:4px 8px;min-height:32px}
+
+/* generic */
+h2{font-size:13px;letter-spacing:.08em;color:var(--ink2);font-weight:700;margin:0 0 8px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:10px;padding:3px;gap:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:500;min-height:34px}
+.chip[aria-pressed="true"]{border-color:var(--c,var(--ink));background:color-mix(in srgb,var(--c,var(--ink)) 14%,var(--surface))}
+.chip[aria-pressed="false"]{color:var(--ink2);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ink2) 50%,transparent)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c,var(--ink2));flex:none}
+.note{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 12px;font-size:13px}
+.note a{color:inherit}
+.l-sh{--c:var(--sh)}.l-ka,.l-pw,.l-pe,.l-o,.l-ks{--c:var(--net)}
+
+/* next buses */
+.next{display:grid;gap:8px}
+.empty{padding:18px;text-align:center;color:var(--ink2);border:1px dashed var(--rule);border-radius:12px}
+
+/* hourly table */
+.tt{display:flex;flex-direction:column}
+.hr{display:grid;grid-template-columns:34px 1fr;gap:8px;padding-block:7px;border-top:1px solid var(--rule);align-items:start}
+.hr:first-child{border-top:0}
+.hr .h{font-family:var(--f-num);font-size:17px;font-weight:500;padding-top:3px;font-variant-numeric:tabular-nums}
+.hr.cur .h{color:var(--accent)}
+.mins{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.m{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:15px;padding:3px 8px;border-radius:7px;color:var(--c);background:color-mix(in srgb,var(--c) 13%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,transparent);line-height:1.4}
+.m i{font-style:normal;font-size:11px;font-family:var(--f-body);margin-right:2px;opacity:.9}
+.m.past{opacity:.35}
+.m.nx{background:var(--c);color:var(--surface);border-color:var(--c);font-weight:500}
+.legend{font-size:12px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 14px}
+.tog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.tog input{width:18px;height:18px;accent-color:var(--accent)}
+
+/* transfer */
+.dests{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.dst{text-align:left;border:1px solid var(--rule);background:var(--surface);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.dst[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.dst b{font-size:17px}
+.dst span{font-size:12px;color:var(--ink2)}
+.plan{display:grid;gap:10px}
+.leg{display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:start}
+.leg .tt2{font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums;font-weight:500}
+.leg .tt2 small{display:block;font-family:var(--f-body);font-size:11px;color:var(--ink2);font-weight:400}
+.leg .bd{border-left:3px solid var(--c,var(--rule));padding-left:12px;min-width:0}
+.leg .bd p{margin:0;font-size:13px;color:var(--ink2)}
+.leg .bd b{font-size:15px}
+.nb{display:flex;flex-direction:column;align-items:stretch;gap:6px;background:var(--surface);border:1px solid var(--rule);border-left:6px solid var(--c);border-radius:12px;padding:12px 14px}
+.nb.l-sh{background:color-mix(in srgb,var(--sh) 8%,var(--surface))}
+.nb:first-child{padding-block:14px}
+.times{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.times .t{display:flex;flex-direction:column;line-height:1.1}
+.times small{font-size:12px;color:var(--ink2);font-weight:700}
+.times b{font-family:var(--f-num);font-size:32px;font-weight:500;font-variant-numeric:tabular-nums}
+.nb:first-child .times b{font-size:42px}
+.times .ar{font-size:22px;color:var(--ink2);padding-bottom:4px}
+.meta{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap}
+.nb .in{font-weight:900;font-size:19px;color:var(--c);white-space:nowrap}
+.nb .sub{font-size:12px;color:var(--ink2);overflow-wrap:anywhere;min-width:0}
+.nb.fast{box-shadow:inset 0 0 0 2px var(--accent)}
+.badge{align-self:flex-start;font-size:11px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 10px}
+.m.l-sh{font-weight:500}
+.brandwrap{display:flex;align-items:center;gap:12px;min-width:0}
+.menu{display:inline-flex;align-items:center;justify-content:center;width:44px;height:40px;border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:10px;flex:none}
+.menu[aria-expanded="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mp{position:absolute;left:0;right:0;top:100%;background:var(--surface);border-bottom:1px solid var(--rule);box-shadow:0 12px 24px rgba(0,0,0,.45);max-height:calc(100vh - 120px);overflow:auto;z-index:8}
+.mp-in{max-width:720px;margin:0 auto;padding:4px 8px 10px;display:flex;flex-direction:column}
+.mp h4{margin:12px 0 2px;font-size:12px;letter-spacing:.08em;color:var(--ink2);font-weight:700}
+.mp .item{text-align:left;border:0;border-top:1px solid var(--rule);background:transparent;padding:13px 6px;font-weight:500;min-height:46px}
+.mp .item:first-child{border-top:0}
+.tchip{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:500;min-height:36px}
+.tchip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.tt-h{display:flex;justify-content:space-between;align-items:baseline;gap:4px 12px;flex-wrap:wrap;margin-bottom:2px}
+.tt-h b{font-size:16px}
+.tt-h .sub,.sub{font-size:12px;color:var(--ink2)}
+.m.shin{color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));border-color:color-mix(in srgb,var(--accent) 45%,transparent);font-weight:500}
+.m i.d{font-size:11px;margin:0 0 0 3px;opacity:.85}
+.shinkey{color:var(--accent)}
+.leg.best .bd{border-left-color:var(--accent)}.leg.best .tt2{color:var(--accent)}
+.cd{font-variant-numeric:tabular-nums}
+.goal{font-weight:900;font-size:20px}
+details summary{cursor:pointer;font-weight:700;padding-block:6px}
+details ul{margin:6px 0 0;padding-left:1.2em;font-size:13px;color:var(--ink2)}
+details li+li{margin-top:4px}
+.src a{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.nb,.m{transition:background .2s}}
+
+/* ---- 区切りを明確にする ---- */
+body::before{background:var(--surface)}
+.bar{background:var(--surface);border-bottom:2px solid var(--accent);
+  margin-left:calc(-1*max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1*max(16px,env(safe-area-inset-right,0px)));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand b{font-size:21px}
+.clock{background:var(--surface2);border:1px solid var(--rule);border-radius:10px;padding:5px 12px}
+.daybox{background:var(--surface2);border:1px solid var(--rule);border-radius:10px;padding:6px 10px}
+.tabs,.seg{background:transparent;padding:0;gap:8px}
+.tabs button,.seg button{border:1px solid var(--rule);background:var(--surface2);color:var(--ink);box-shadow:none}
+.tabs button[aria-selected="true"],.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+h2{display:flex;align-items:center;gap:8px;font-size:14px;letter-spacing:.06em;color:var(--ink);margin:0 0 8px}
+h2::before{content:"";flex:none;width:4px;height:16px;border-radius:2px;background:var(--accent)}
+.card{border-color:var(--rule)}
+.tt-h{background:var(--surface2);margin:-14px -14px 8px;padding:10px 14px;border-bottom:1px solid var(--rule);border-radius:11px 11px 0 0}
+.hr{grid-template-columns:40px 1fr;margin-inline:-6px;padding-inline:6px;border-radius:8px}
+.hr:nth-child(even){background:color-mix(in srgb,var(--surface2) 55%,transparent)}
+.hr .h{background:var(--surface2);border:1px solid var(--rule);border-radius:7px;text-align:center;padding:1px 0;height:fit-content}
+.hr.cur .h{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.nb{border-color:var(--rule)}
+.nb .in{background:color-mix(in srgb,var(--c) 20%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-radius:999px;padding:2px 12px}
+.chip,.dst,.tchip,.menu{border-color:var(--rule)}
+.chip[aria-pressed="true"]{border-width:2px}
+.m{border-color:color-mix(in srgb,var(--c) 45%,transparent)}
+.mp .item{border-top-color:var(--rule)}
+
+.disc{max-width:720px;margin:28px auto 0;padding:12px 14px;border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px;background:var(--surface);font-size:12px;color:var(--ink2);line-height:1.7}
+.disc b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+.disc p{margin:0}
+</style>
+
+<header class="bar"><div class="bar-in">
+  <div class="row">
+    <div class="brandwrap"><button class="menu" id="menuBtn" aria-label="メニュー" aria-expanded="false" aria-controls="menuPanel"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" stroke-width="2"/></svg></button><div class="brand"><b>BKCバスナビ</b><span>南草津駅 ⇄ 立命館大学BKC</span></div></div>
+    <div class="clock"><span class="t" id="clk">--:--</span><span class="d" id="dte"></span></div>
+  </div>
+  <div class="daybox" id="daybox">
+    <span class="pill" id="modePill">--</span>
+    <label>ダイヤ
+      <select id="modeSel"><option value="auto">自動</option><option value="weekday">平日(開講)</option></select>
+    </label>
+    <label>時刻を指定 <input type="time" id="timeSel"></label>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-bus" aria-selected="true" data-tab="bus">バス時刻表</button>
+    <button role="tab" id="tab-tr" aria-selected="false" data-tab="tr">乗り換え案内</button>
+  </div>
+</div>
+<nav class="mp" id="menuPanel" aria-label="メニュー" hidden><div class="mp-in">
+  <button class="item" data-go="bus">次のバス</button>
+  <button class="item" data-go="tr">乗り換え案内</button>
+  <h4>時刻表(平日・開講ダイヤ)</h4>
+  <button class="item" data-tt="to">南草津駅 → BKC</button>
+  <button class="item" data-tt="from-minami">BKC → 南草津駅</button>
+  <button class="item" data-tt="from-kusatsu">BKC → 草津駅・瀬田駅</button>
+  <button class="item" data-tt="from-other">BKC → 松ヶ丘五丁目・長寿センター・UCD</button>
+  <button class="item" data-tt="jr">JR 南草津駅(京都・大阪方面)</button>
+</div></nav></header>
+
+<main class="wrap" id="main" style="padding-top:16px"></main>
+<footer class="disc" role="contentinfo">
+  <b>非公式のアプリです</b>
+  <p>立命館大学、近江鉄道バス、JR西日本などの事業者とは関係ありません。時刻や所要時間は、提供された資料と公開情報をもとにした目安で、正確さは保証できません。運休・遅延・臨時ダイヤは反映していません。ご利用の前に、必ず公式の時刻表と運行情報を確認してください。</p>
+</footer>
+
+<script>
+/* ---------- データ ---------- */
+var R=function(a,b){var o={};for(var h=a;h<=b;h++)o[h]=[];return o};
+var DATA={
+ weekday:{label:'平日・開講ダイヤ',rev:'2026.9.28改正',
+  to:[
+   {id:'sh',name:'シャトル(直行)',stop:'1番',cls:'l-sh',ride:12,times:{7:[30,40,45,52,57],8:[0,5,10,16,20,23,25,27,30,33,37,40,45,50],9:[2,12,20,25,30,33,40,43,49,53,58],10:[1,4,9,12,15,18,21,24,29,37,40,47,52],11:[2,17,22,32,37,52],12:[2,12,17,22,28,32,37,47,52],13:[17,22,37,52],14:[30],15:[52]}},
+   {id:'ka',name:'かがやき通り経由',stop:'3番',cls:'l-ka',ride:15,times:{8:[5,20,37],9:[7,20,41],10:[9,24,52],11:[22,52],12:[22,52],13:[22,52],14:[37,52],15:[17],16:[18]}},
+   {id:'pw',name:'パナソニック西口経由',stop:'4番',cls:'l-pw',ride:24,times:{8:[1,30],9:[2],10:[4],11:[2,37],12:[2,37],13:[2,37],14:[2,22],15:[22],16:[22],17:[24],18:[24],19:[24],20:[24],21:[24]}},
+   {id:'pe',name:'パナソニック東口経由',stop:'4番',cls:'l-pe',ride:15,times:{6:[57],7:[27,44,57],8:[16,33,45],9:[12,30],10:[19,38],11:[17],15:[2,37,52],16:[3,37,54],17:[9,39,54],18:[9,39,54],19:[9,54],20:[9,54],21:[9]}},
+   {id:'f5',name:'立命館大学経由(長寿センター行)',stop:'5番',cls:'l-o',ride:15,times:{8:[55],9:[20,55],10:[24,52],11:[22,52],12:[22,52],13:[22,52],14:[52]}}
+  ],
+  from:{
+   minami:[
+    {id:'sh',name:'シャトル(直行)',stop:'3番',cls:'l-sh',ride:12,times:{10:[50],11:[30,50,55],12:[25,40,45,55],13:[10,30,50],14:[0,10,30,50,55],15:[5,10,15,30,45],16:[0,10,20,25,30,35,38,43,46,50,55],17:[0,15,30,40,55],18:[5,25,35,45,50,55],19:[5,15,25,40],20:[0,10,45]}},
+    {id:'ka',name:'かがやき通り経由',stop:'2番',cls:'l-ka',ride:15,times:{9:[25],10:[0,25],11:[0,30],12:[0,30],13:[0,30],14:[0,30],15:[0,30],16:[0,30],17:[0,30],18:[0,30],19:[0],20:[0,30],21:[0]}},
+    {id:'pw',name:'パナソニック西口経由',stop:'2番',cls:'l-pw',ride:24,times:{9:[45],10:[45],11:[45],12:[45],13:[45],14:[55],15:[45],16:[45],17:[10,25,40,55],18:[10,25,40,55],19:[10,25,40,55],20:[10,25,40,55],21:[10,25,40],22:[0]}},
+    {id:'pe',name:'パナソニック東口経由',stop:'2番',cls:'l-pe',ride:15,times:{7:[0,15],8:[5,35],9:[5,35],10:[5,35],11:[5,20,35],12:[5,20,35],13:[5,20,35],14:[5,20,35],15:[5,20,35],16:[5,35,50],17:[5,20,35,50],18:[5,20,35],19:[5,20,35,50],20:[5,20,50],21:[50],22:[40]}}
+   ],
+   kusatsu:[
+    {id:'kt',name:'草津駅行(P東口・バイパス経由)',stop:'1番',cls:'l-ks',times:{9:[30],10:[0,40],11:[30],12:[0,30],13:[30],15:[0],16:[40],18:[25],19:[40],20:[40]}},
+    {id:'st',name:'瀬田駅行(P東口・笠山経由)',stop:'1番',cls:'l-o',times:{7:[45],8:[45],9:[15,45],10:[45],11:[15],12:[45],13:[15,45],14:[55],15:[45],16:[15,45],17:[15,45],18:[35],19:[15,30],20:[15]}}
+   ],
+   other:[
+    {id:'mt',name:'松ヶ丘五丁目行',stop:'F乗り場',cls:'l-pw',times:{9:[7,32],10:[7,36],11:[4,34],12:[4,34],13:[4,34],14:[4],15:[4]}},
+    {id:'fc',name:'県立長寿社会福祉センター行(P前・医大)',stop:'F乗り場',cls:'l-pe',times:{8:[23]}},
+    {id:'uc',name:'UCD-ARROW循環線',stop:'アクロスウィング前',cls:'l-ka',times:{7:['※07','※58'],9:['※33'],11:['※53'],13:['※33'],15:['※03'],16:['※43'],18:['※野25']}}
+   ]
+  }},
+ weekend:{label:'土日祝ダイヤ',rev:'2026.7.25改正',
+  to:[
+   {id:'ka',name:'かがやき通り経由',stop:'3番',cls:'l-ka',ride:15,times:{8:[9,33],9:[9,33],10:[3,38],11:[2,37],12:[2,37],13:[2,37],14:[2,37],15:[2,37]}},
+   {id:'pn',name:'パナソニック西口・東口経由',stop:'4番',cls:'l-pe',ride:20,times:{7:[27,44],8:[1,19,24],9:[3,18,23],10:[22],11:[22],12:[22],13:[22],14:[22],15:[22],16:[22,54],17:[24,54],18:[24],19:[24],20:[24],21:[24]}},
+   {id:'f5',name:'立命館大学経由(松ヶ丘五丁目行)',stop:'5番',cls:'l-o',ride:15,times:{8:[55],9:[55],10:[52],11:[52],12:[52],13:[52],14:[52],15:[52]}}
+  ],
+  from:{
+   minami:[
+    {id:'kb',name:'南草津駅行(かがやき・パナソニック経由)',stop:'2番',cls:'l-ka',ride:20,times:{9:[25,45,15,50],10:[25,45,5,15,35,50],11:[0,25,5,35],12:[0,30,5,35],13:[0,25,45,5,35],14:[0,25,55,5,35],15:[0,25,5,35],16:[0,25,45,5,35],17:[0,25,45,15,35],18:[0,25,45,15,35],19:[0,30,45,15],20:[0,30,45,15],21:[0,30,15]}}
+   ],
+   kusatsu:[
+    {id:'ks',name:'草津駅・瀬田駅方面',stop:'1番',cls:'l-ks',times:{7:[45],8:[45],10:[45],12:[15],14:[15],15:[15],16:[45],18:[25],19:[15]}}
+   ],
+   other:[
+    {id:'uc',name:'UCD-ARROW循環線',stop:'アクロスウィング前',cls:'l-ka',times:{7:['※07','※58'],9:['※33'],11:['※53'],13:['※33'],15:['※03'],16:['※43'],18:['※野25']}}
+   ]
+  }}
+};
+var DESTS=[
+ {id:'minami',name:'南草津駅'},{id:'kusatsu',name:'草津駅・瀬田駅'},{id:'other',name:'その他'}
+];
+var TRAINS=[
+ {id:'kyoto',name:'京都',fu:21,sh:18},
+ {id:'osaka',name:'大阪',fu:65,sh:48},
+ {id:'sannomiya',name:'三ノ宮',fu:96,sh:71}
+];
+/* 南草津駅 姫路方面。"分" + s(=新快速) + 行先略称。行先なしは姫路行。9〜23時台のみ(提供画像) */
+var JR={
+ 9:["1網","10s","16加","25s","31網","47加","56s"],
+ 10:["2網","11s","17加","26s","32網","47加","56s"],
+ 11:["2網","11s","17加","26s","32網","47加","56s"],
+ 12:["2網","11s","17加","26s","32網","47加","56s"],
+ 13:["2網","11s","17加","26s","32網","47網","56s"],
+ 14:["2網","11s","17網","26s","32網","47網","56s"],
+ 15:["2網","11s播","17網","26s","32網","45網","55s播"],
+ 16:["0","9s","15網","24s播","31網","46網","54s播"],
+ 17:["0網","9s","16網","24s","30","40京","46網","54s播"],
+ 18:["0","7京","9s","15網","24s播","30網","39s網","45網","54s播"],
+ 19:["0網","9s","15","24s","30網","39s","46播","54s"],
+ 20:["1上","9s上","16網","24s","32","39s","46加","51京","54s"],
+ 21:["1","9s網","21上","30s網","41","50s網"],
+ 22:["2","10s","29s","31","50s"],
+ 23:["0大","10s西","30京","52京"]
+};
+var JRNAME={'網':'網干','加':'加古川','播':'播州赤穂','上':'上郡','京':'京都','大':'大阪','西':'西明石'};
+var JRL=(function(){var out=[];Object.keys(JR).forEach(function(h){JR[h].forEach(function(q){
+  var x=q.match(/^(\d+)(s?)(.*)$/);out.push({t:+h*60+ +x[1],shin:!!x[2],d:x[3]?JRNAME[x[3]]:'姫路',a:x[3]||''})})});
+  out.sort(function(a,b){return a.t-b.t});return out})();
+var HOL=['2026-11-03','2026-11-23','2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22'];
+var OPEN=[['2026-09-28','2026-12-25'],['2027-01-06','2027-01-22']];
+var WD=['日','月','火','水','木','金','土'];
+
+/* ---------- 関数 ---------- */
+function p2(n){return (n<10?'0':'')+n}
+function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function autoMode(d){var s=ymd(d),w=d.getDay();
+  if(w===0||w===6||HOL.indexOf(s)>=0)return 'off';
+  for(var i=0;i<OPEN.length;i++)if(s>=OPEN[i][0]&&s<=OPEN[i][1])return 'weekday';
+  return 'off'}
+function parseT(v){if(typeof v==='number')return {m:v,tag:''};
+  var x=v.match(/(\d+)$/);return {m:+x[1],tag:v.slice(0,v.length-x[1].length)}}
+function entries(lines,hidden){var out=[],seen={};
+  lines.forEach(function(L){if(hidden[L.id])return;
+    Object.keys(L.times).forEach(function(h){L.times[h].forEach(function(v){
+      var q=parseT(v),k=L.id+'|'+h+'|'+q.m+'|'+q.tag;if(seen[k])return;seen[k]=1;
+      out.push({h:+h,m:q.m,tag:q.tag,line:L,t:+h*60+q.m})})})});
+  out.sort(function(a,b){return a.t-b.t||(a.line.id<b.line.id?-1:1)});return out}
+function fmt(t){t=Math.round(t);return p2(Math.floor(t/60)%24)+':'+p2(t%60)}
+
+var S={tab:'bus',mode:'auto',dir:'to',dest:'minami',hidden:{},hidePast:true,tdest:'kyoto',tfrom:'bkc',tt:'to',menu:false,time:''};
+function nowDate(){var d=new Date();if(S.time){var a=S.time.split(':');d.setHours(+a[0],+a[1],0,0)}return d}
+function effMode(d){return S.mode==='auto'?autoMode(d):S.mode}
+function curLines(m){var D=DATA[m];if(!D)return [];return S.dir==='to'?D.to:D.from[S.dest]}
+
+/* ---------- 描画 ---------- */
+function cdText(r){if(r<=0)return 'まもなく';if(r<180){var q=Math.floor(r);if(q<1)return 'まもなく';return 'あと '+(q>=60?Math.floor(q/60)+'分'+p2(q%60)+'秒':q+'秒')}return 'あと '+Math.ceil(r/60)+'分'}
+function tagHtml(tag){return tag?'<i>'+tag+'</i>':''}
+function renderBus(d,m){
+  var h='';
+  if(m==='off'){
+    return '<div class="note">このアプリは今のところ平日(開講期間)専用です。土日祝と休講期間のダイヤは未対応です。公式の時刻表は<a href="https://www.ohmitetudo.co.jp/bus/guide/minakusa-ritumei/" target="_blank" rel="noopener">近江鉄道のページ</a>で確認できます。</div>'+
+    '<div class="row" style="justify-content:flex-start"><button class="chip" data-mode="weekday" style="font-weight:700">平日ダイヤを参考に見る</button></div>'}
+  var D=DATA[m],lines=curLines(m),nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+  var nowSec=nowMin*60,all=entries(lines,S.hidden),nx=all.filter(function(e){return e.t>=nowMin-0.001});
+  h+='<div class="seg" role="group" aria-label="方向"><button data-dir="to" aria-pressed="'+(S.dir==='to')+'">南草津駅 → BKC</button><button data-dir="from" aria-pressed="'+(S.dir==='from')+'">BKC → 駅・その他</button></div>';
+  if(S.dir==='from'){h+='<div class="seg" role="group" aria-label="行き先">'+DESTS.map(function(x){return '<button data-dest="'+x.id+'" aria-pressed="'+(S.dest===x.id)+'">'+x.name+'</button>'}).join('')+'</div>'}
+  h+='<div class="chips" role="group" aria-label="系統の絞り込み">'+lines.map(function(L){return '<button class="chip '+L.cls+'" data-line="'+L.id+'" aria-pressed="'+(!S.hidden[L.id])+'"><span class="dot"></span>'+L.name+'</button>'}).join('')+'</div>';
+  if(m==='weekend'&&S.dir==='to'||m==='weekend'&&S.dest==='minami'&&S.dir==='from')h+='<div class="note">土日祝はシャトル(直行)バスが運休です。経由便のみ運行します。</div>';
+  h+='<section><h2>次のバス</h2><div class="next">';
+  if(!nx.length)h+='<div class="empty">本日の運行は終了しました。</div>';
+  var cand=nx.slice(0,4),bestK=-1,bestA=1e9,goal=S.dir==='to'?'BKC':'南草津駅';
+  cand.forEach(function(e,i){if(e.line.ride&&(S.dir==='to'||S.dest==='minami')&&e.t+e.line.ride<bestA){bestA=e.t+e.line.ride;bestK=i}});
+  cand.forEach(function(e,i){
+    var arrive=e.line.ride&&(S.dir==='to'||S.dest==='minami'),fast=(i===bestK&&cand.length>1);
+    h+='<div class="nb '+e.line.cls+(fast?' fast':'')+'"><div class="times"><div class="t"><small>発</small><b>'+fmt(e.t)+'</b></div>'+
+      (arrive?'<span class="ar" aria-hidden="true">→</span><div class="t"><small>'+goal+'着 約</small><b>'+fmt(e.t+e.line.ride)+'</b></div>':'')+'</div>'+
+      '<div class="meta"><span class="in"><span class="cd" data-t="'+e.t+'">'+cdText(e.t*60-nowSec)+'</span></span><span class="sub">'+e.line.name+' ・ のりば'+e.line.stop+(e.tag?' ・ '+tagNote(e.tag):'')+'</span></div>'+
+      (fast?'<span class="badge">この中でいちばん早く着く</span>':'')+'</div>'});
+  h+='</div></section>';
+  var nxKey=nx.length?nx[0].t+'|'+nx[0].line.id:'';
+  h+='<section class="card"><div class="row" style="margin-bottom:6px"><h2 style="margin:0">'+D.label+'(全便)</h2><label class="tog"><input type="checkbox" id="hp" '+(S.hidePast?'checked':'')+'>過ぎた時間帯を隠す</label></div><div class="tt">';
+  var byH={};all.forEach(function(e){(byH[e.h]=byH[e.h]||[]).push(e)});
+  var hours=Object.keys(byH).map(Number).sort(function(a,b){return a-b}),shown=0,curH=d.getHours();
+  hours.forEach(function(hh){if(S.hidePast&&hh<curH)return;shown++;
+    h+='<div class="hr'+(hh===curH?' cur':'')+'"><div class="h">'+p2(hh)+'</div><div class="mins">'+byH[hh].map(function(e){
+      var cls='m '+e.line.cls+(e.t<nowMin?' past':'')+((e.t+'|'+e.line.id)===nxKey?' nx':'');
+      return '<span class="'+cls+'" title="'+e.line.name+'">'+tagHtml(e.tag)+p2(e.m)+'</span>'}).join('')+'</div></div>'});
+  if(!shown)h+='<div class="empty">表示できる便がありません。</div>';
+  h+='</div></section>';
+  var tags={};all.forEach(function(e){if(e.tag)tags[e.tag]=1});
+  var tk=Object.keys(tags);
+  if(tk.length)h+='<div class="legend">'+tk.map(function(t){return '<span><b>'+t+'</b> '+tagNote(t)+'</span>'}).join('')+'</div>';
+  h+=footer(m);return h}
+function tagNote(t){return {'※':'運行日はカレンダーで確認','立':'立命館大学を経由','野':'バイパス野路止まり','※野':'運行日はカレンダー確認・野路止まり'}[t]||t}
+function footer(m){
+  var warn=m==='weekend'?'<li>土日祝の時刻表は公式PDFの文字データから作成しました。列の割り当て(特にBKC発の草津駅・瀬田駅方面と、南草津駅発4番のパナソニック西口/東口の区別)は推定を含みます。乗る前に公式PDFで確認してください。</li>':'';
+  return '<details class="card"><summary>データについて</summary><ul>'+
+   '<li>ダイヤ: '+DATA[m].label+'('+DATA[m].rev+')。提供された時刻表画像から作成しています。現在は平日(開講期間)専用です。</li>'+warn+
+   '<li>平日の8時台シャトル(南草津発)の16分と23分は、画像で2回ずつ記載されていますが、1便として表示しています。</li>'+
+   '<li>土日祝、休講期間、休日授業日の臨時便、運休・遅延は反映していません。</li>'+
+   '<li>駅着・BKC着の時刻は、バスの所要時間(目安: シャトル約12分、かがやき通り・パナソニック東口経由約15分、パナソニック西口経由約24分)を足した概算です。</li></ul>'+
+   '<p class="src" style="font-size:13px;margin:8px 0 0">公式: <a href="https://www.ohmitetudo.co.jp/bus/guide/minakusa-ritumei/" target="_blank" rel="noopener">南草津駅－立命館大学 時刻表(近江鉄道)</a> ／ <a href="https://www.ohmitetudo.co.jp/bus/guide/kusatsu-ritumei/rinjibus/" target="_blank" rel="noopener">休日授業日の臨時便</a></p></details>'}
+
+function fmtN(t){t=Math.round(t);return (t>=1440?'翌':'')+fmt(t)}
+function reach(x,id){if(x.d==='京都')return id==='kyoto';if(x.d==='大阪')return id!=='sannomiya';return true}
+function jrRows(ready,T){
+  var cand=JRL.filter(function(x){return x.t>=ready&&reach(x,T.id)}).slice(0,4);
+  if(!cand.length)return '<div class="empty">この時刻以降に乗れる電車が登録されていません。9時より前と、24時以降は未登録です。</div>';
+  var best=0;cand.forEach(function(x,i){if(x.t+(x.shin?T.sh:T.fu)<cand[best].t+(cand[best].shin?T.sh:T.fu))best=i});
+  return cand.map(function(x,i){var mn=x.shin?T.sh:T.fu;
+    return '<div class="leg'+(i===best?' best':'')+'"><div class="tt2">'+fmt(x.t)+'<small>南草津発</small></div><div class="bd"><b>'+(x.shin?'新快速':'普通')+' '+x.d+'行</b><p>'+T.name+'着 <b>'+fmtN(x.t+mn)+'</b>(乗車'+mn+'分)'+(i===best?' ・ いちばん早く着く':'')+'</p></div></div>'}).join('')}
+function renderTr(d,m){
+  var T=TRAINS.filter(function(x){return x.id===S.tdest})[0]||TRAINS[0],h='';
+  var nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+  if(m==='off')h+='<div class="note">いまは平日(開講期間)ではありません。このアプリは平日専用のため、電車の表示は平日ダイヤの参考です。</div>';
+  h+='<section><h2>行き先(南草津駅から)</h2><div class="dests">'+TRAINS.map(function(x){
+    return '<button class="dst" data-td="'+x.id+'" aria-pressed="'+(x.id===S.tdest)+'"><b>'+x.name+'</b><span>普通 '+x.fu+'分 ・ 新快速 '+x.sh+'分</span></button>'}).join('')+'</div></section>';
+  h+='<div class="seg" role="group" aria-label="出発地"><button data-tf="bkc" aria-pressed="'+(S.tfrom==='bkc')+'">BKCから</button><button data-tf="st" aria-pressed="'+(S.tfrom==='st')+'">南草津駅から</button></div>';
+  if(S.tfrom==='st'){
+    h+='<section><h2>'+fmt(nowMin)+' 以降の電車('+T.name+'方面)</h2><div class="card"><div class="plan">'+jrRows(nowMin,T)+'</div></div></section>';
+  }else{
+    h+='<section><h2>BKCから'+T.name+'へ</h2><div class="plan">';
+    var D=DATA[m];
+    if(!D)h+='<div class="note">バスのダイヤは平日(開講期間)のみ対応しています。バス時刻表タブで「平日ダイヤを参考に見る」を選ぶと表示できます。</div>';
+    else{
+      var bs=entries(D.from.minami,{}).filter(function(e){return e.t>=nowMin-0.001}).slice(0,2);
+      if(!bs.length)h+='<div class="empty">本日のBKC発バスは終了しました。</div>';
+      bs.forEach(function(e){var arr=e.t+(e.line.ride||15),ready=arr+5;
+        h+='<div class="card"><div class="plan"><div class="leg"><div class="tt2">'+fmt(arr)+'<small>南草津駅着 約</small></div><div class="bd '+e.line.cls+'"><b>BKC '+fmt(e.t)+'発のバス</b><p>'+e.line.name+'。ホームまで5分とみて '+fmt(ready)+' 以降の電車に乗れます。</p></div></div>'+jrRows(ready,T)+'</div></div>'})}
+    h+='</div></section>';
+  }
+  h+='<div class="note">電車の時刻は、提供された南草津駅の時刻表(姫路方面・9〜23時台)から作っています。平日ダイヤとして扱っています。到着時刻は発車時刻に、普通と新快速それぞれの一律の所要分を足した計算値です。京都行・大阪行の電車は、その先の駅へは行きません。</div>';
+  return h}
+
+var TTS=[{id:'to',name:'南草津駅 → BKC'},{id:'from-minami',name:'BKC → 南草津駅'},{id:'from-kusatsu',name:'BKC → 草津駅・瀬田駅'},{id:'from-other',name:'BKC → その他'},{id:'jr',name:'JR 南草津駅'}];
+function ttLines(){var D=DATA.weekday;return S.tt==='to'?D.to:S.tt==='from-minami'?D.from.minami:S.tt==='from-kusatsu'?D.from.kusatsu:D.from.other}
+function hourGrid(es,nowMin,curH){var by={};es.forEach(function(e){(by[e.h]=by[e.h]||[]).push(e)});
+  return Object.keys(by).map(Number).sort(function(a,b){return a-b}).map(function(hh){
+    return '<div class="hr'+(hh===curH?' cur':'')+'"><div class="h">'+p2(hh)+'</div><div class="mins">'+by[hh].map(function(e){
+      return '<span class="m '+e.line.cls+(e.t<nowMin?' past':'')+'">'+tagHtml(e.tag)+p2(e.m)+'</span>'}).join('')+'</div></div>'}).join('')}
+function jrGrid(nowMin,curH){var by={};JRL.forEach(function(x){var hh=Math.floor(x.t/60);(by[hh]=by[hh]||[]).push(x)});
+  return Object.keys(by).map(Number).sort(function(a,b){return a-b}).map(function(hh){
+    return '<div class="hr'+(hh===curH?' cur':'')+'"><div class="h">'+p2(hh)+'</div><div class="mins">'+by[hh].map(function(x){
+      return '<span class="m '+(x.shin?'shin':'l-ks')+(x.t<nowMin?' past':'')+'">'+p2(x.t%60)+(x.a?'<i class="d">'+x.a+'</i>':'')+'</span>'}).join('')+'</div></div>'}).join('')}
+function renderTT(d,m){
+  var nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,curH=d.getHours(),h='';
+  if(m==='off')h+='<div class="note">いまは平日(開講期間)ではありません。このアプリは平日専用のため、表示は平日ダイヤの参考です。</div>';
+  h+='<div class="chips" role="group" aria-label="時刻表の選択">'+TTS.map(function(x){return '<button class="tchip" data-tt="'+x.id+'" aria-pressed="'+(S.tt===x.id)+'">'+x.name+'</button>'}).join('')+'</div>';
+  if(S.tt==='jr'){
+    h+='<section class="card"><div class="tt-h"><b>JR琵琶湖線 南草津駅</b><span class="sub">京都・大阪方面(姫路方面行き)</span></div><div class="sub" style="margin-bottom:6px">'+JRL.length+'本 ・ 9〜23時台 ・ 平日</div><div class="tt">'+jrGrid(nowMin,curH)+'</div></section>';
+    h+='<div class="legend"><span><b class="shinkey">橙</b> 新快速</span><span><b>灰</b> 普通</span><span>行先: 網=網干 加=加古川 播=播州赤穂 上=上郡 京=京都 大=大阪 西=西明石(なしは姫路行)</span></div>';
+    h+='<div class="note">京都行・大阪行の電車は、その先の駅へは行きません。5〜8時台は未登録です。</div>';
+    return h}
+  var lines=ttLines(),arrive=(S.tt==='to'||S.tt==='from-minami'),tags={};
+  lines.forEach(function(L){var es=entries([L],{});if(!es.length)return;
+    es.forEach(function(e){if(e.tag)tags[e.tag]=1});
+    h+='<section class="card"><div class="tt-h"><b>'+L.name+'</b><span class="sub">のりば '+L.stop+(arrive&&L.ride?' ・ 所要 約'+L.ride+'分':'')+'</span></div><div class="sub" style="margin-bottom:6px">'+es.length+'本 ・ 始発 '+fmt(es[0].t)+' ・ 最終 '+fmt(es[es.length-1].t)+'</div><div class="tt">'+hourGrid(es,nowMin,curH)+'</div></section>'});
+  var tk=Object.keys(tags);
+  if(tk.length)h+='<div class="legend">'+tk.map(function(t){return '<span><b>'+t+'</b> '+tagNote(t)+'</span>'}).join('')+'</div>';
+  h+='<div class="legend"><span>平日・開講ダイヤ('+DATA.weekday.rev+')。薄い数字は発車済みです。</span></div>';
+  return h}
+
+function render(){
+  var d=nowDate(),m=effMode(d),el=document.getElementById('main');
+  document.getElementById('clk').textContent=p2(d.getHours())+':'+p2(d.getMinutes());
+  document.getElementById('dte').textContent=(d.getMonth()+1)+'/'+d.getDate()+'('+WD[d.getDay()]+')';
+  var pill=document.getElementById('modePill');
+  pill.textContent=m==='off'?'平日専用(いまは対象外)':DATA[m].label;
+  pill.className='pill'+(S.mode!=='auto'?' soft':'');
+  document.getElementById('modeSel').value=S.mode;
+  ['bus','tr'].forEach(function(t){document.getElementById('tab-'+t).setAttribute('aria-selected',String(S.tab===t))});
+  var y=window.scrollY;
+  el.innerHTML=S.tab==='bus'?renderBus(d,m):S.tab==='tt'?renderTT(d,m):renderTr(d,m);
+  var mp=document.getElementById('menuPanel'),mb=document.getElementById('menuBtn');if(mp)mp.hidden=!S.menu;if(mb)mb.setAttribute('aria-expanded',String(S.menu));
+  window.scrollTo(0,y)}
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest('button');
+  if(b&&b.id==='menuBtn'){S.menu=!S.menu;render();return}
+  if(S.menu&&!e.target.closest('#menuPanel')){S.menu=false;if(!b){render();return}}
+  if(!b)return;
+  S.menu=false;
+  if(b.dataset.go){S.tab=b.dataset.go;window.scrollTo(0,0);try{history.replaceState(null,'','#'+S.tab)}catch(x){}}
+  else if(b.dataset.tt){S.tab='tt';S.tt=b.dataset.tt;window.scrollTo(0,0);try{history.replaceState(null,'','#tt')}catch(x){}}
+  else if(b.dataset.tab){S.tab=b.dataset.tab;try{history.replaceState(null,'','#'+S.tab)}catch(x){}}
+  else if(b.dataset.dir)S.dir=b.dataset.dir,S.hidden={};
+  else if(b.dataset.dest)S.dest=b.dataset.dest,S.hidden={};
+  else if(b.dataset.line)S.hidden[b.dataset.line]=!S.hidden[b.dataset.line];
+  else if(b.dataset.td)S.tdest=b.dataset.td;
+  else if(b.dataset.tf)S.tfrom=b.dataset.tf;
+  else if(b.dataset.mode)S.mode=b.dataset.mode;
+  else return;
+  render()});
+document.addEventListener('change',function(e){
+  if(e.target.id==='hp')S.hidePast=e.target.checked;
+  else if(e.target.id==='modeSel')S.mode=e.target.value;
+  else if(e.target.id==='timeSel')S.time=e.target.value;
+  else return;
+  render()});
+window.addEventListener('hashchange',function(){var t=location.hash.slice(1);if(t==='bus'||t==='tr'||t==='tt'){S.tab=t;render()}});
+(function(){var t=location.hash.slice(1);if(t==='tr'||t==='tt')S.tab=t})();
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&S.menu){S.menu=false;render()}});
+render();
+var lastMin=-1;
+setInterval(function(){
+  if(S.time)return;
+  var d=new Date(),mm=d.getMinutes();
+  if(mm!==lastMin){lastMin=mm;render();return}
+  if(S.tab!=='bus')return;
+  var nowSec=d.getHours()*3600+mm*60+d.getSeconds(),need=false;
+  document.querySelectorAll('.cd').forEach(function(n){
+    var r=+n.getAttribute('data-t')*60-nowSec;
+    if(r<=0&&n.textContent==='まもなく')need=true;
+    n.textContent=cdText(r)});
+  if(need)render()
+},1000);
+</script>
