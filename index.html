@@ -1,5 +1,17 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
 <title>BKCバスナビ</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{background:#09090b;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
 /* Layout: 1 column, phone first. Sticky clock bar on top, "next bus" cards first, hourly timetable below. Line colours identify each bus route everywhere. */
@@ -159,7 +171,8 @@ h2::before{content:"";flex:none;width:4px;height:16px;border-radius:2px;backgrou
 .disc b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
 .disc p{margin:0}
 </style>
-
+</head>
+<body>
 <header class="bar"><div class="bar-in">
   <div class="row">
     <div class="brandwrap"><button class="menu" id="menuBtn" aria-label="メニュー" aria-expanded="false" aria-controls="menuPanel"><svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true"><path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" stroke-width="2"/></svg></button><div class="brand"><b>BKCバスナビ</b><span>南草津駅 ⇄ 立命館大学BKC</span></div></div>
@@ -298,7 +311,7 @@ function effMode(d){return S.mode==='auto'?autoMode(d):S.mode}
 function curLines(m){var D=DATA[m];if(!D)return [];return S.dir==='to'?D.to:D.from[S.dest]}
 
 /* ---------- 描画 ---------- */
-function cdText(r){if(r<=0)return 'まもなく';if(r<180){var q=Math.floor(r);if(q<1)return 'まもなく';return 'あと '+(q>=60?Math.floor(q/60)+'分'+p2(q%60)+'秒':q+'秒')}return 'あと '+Math.ceil(r/60)+'分'}
+function cdText(r){if(r<=0)return 'まもなく';if(r<180){var q=Math.floor(r);if(q<1)return 'まもなく';return 'あと '+(q>=60?Math.floor(q/60)+'分'+p2(q%60)+'秒':q+'秒')}var mn=Math.ceil(r/60);return 'あと '+(mn>=60?Math.floor(mn/60)+'時間'+(mn%60?(mn%60)+'分':''):mn+'分')}
 function tagHtml(tag){return tag?'<i>'+tag+'</i>':''}
 function renderBus(d,m){
   var h='';
@@ -460,3 +473,5 @@ setInterval(function(){
   if(need)render()
 },1000);
 </script>
+</body>
+</html>
