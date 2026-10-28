@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="BKCバス">
+<meta name="apple-mobile-web-app-title" content="BKCバスナビ">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>BKCバスナビ</title>
 <style>
@@ -19,7 +19,7 @@ body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
 <style>
 /* Layout: 1 column, phone first. Sticky clock bar on top, "next bus" cards first, hourly timetable below. Line colours identify each bus route everywhere. */
 :root{
@@ -29,7 +29,7 @@ img{max-width:100%}
   --sh:#ff5468; --net:#b3b9c7;
   --warn-bg:#2e2410; --warn-ink:#f5d98b;
   --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-  --f-num:"DM Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --f-num:"Rajdhani",ui-monospace,"SF Mono",Menlo,monospace;
   color-scheme:dark;
 }
 
@@ -177,6 +177,11 @@ h2::before{content:"";flex:none;width:4px;height:16px;border-radius:2px;backgrou
 .disc{max-width:720px;margin:28px auto 0;padding:12px 14px;border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px;background:var(--surface);font-size:12px;color:var(--ink2);line-height:1.7}
 .disc b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
 .disc p{margin:0}
+.contact{max-width:720px;margin:12px auto 0;padding:12px 14px;border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.6}
+.contact b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+.contact p{margin:0}
+.contact a{color:var(--accent);font-weight:700;text-decoration:none;display:inline-block;margin-top:4px;padding:6px 12px;border:1px solid var(--accent);border-radius:999px}
+.contact{margin-bottom:28px}
 
 /* ---- シンプル版(バスのタブ) ---- */
 .set{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 6px 4px;font-size:13px;color:var(--ink2)}
@@ -267,7 +272,7 @@ h2::before{content:"";flex:none;width:4px;height:16px;border-radius:2px;backgrou
   <button class="item" data-go="bus">次のバス</button>
   <button class="item" data-go="tr">乗り換え案内</button>
   <button class="item" data-go="set">設定(時刻・ダイヤ)</button>
-  <h4>時刻表(平日・開講ダイヤ)</h4>
+  <h4>時刻表(日付に合わせて平日・土日祝)</h4>
   <button class="item" data-tt="to">南草津駅 → BKC</button>
   <button class="item" data-tt="from-minami">BKC → 南草津駅</button>
   <button class="item" data-tt="from-kusatsu">BKC → 草津駅・瀬田駅</button>
@@ -281,6 +286,7 @@ h2::before{content:"";flex:none;width:4px;height:16px;border-radius:2px;backgrou
   <b>非公式のアプリです</b>
   <p>立命館大学、近江鉄道バス、JR西日本などの事業者とは関係ありません。時刻や所要時間は、提供された資料と公開情報をもとにした目安で、正確さは保証できません。運休・遅延・臨時ダイヤは反映していません。ご利用の前に、必ず公式の時刻表と運行情報を確認してください。</p>
 </footer>
+<section class="contact" aria-label="連絡先"><b>バグ報告・ご連絡</b><p>不具合や時刻の間違いを見つけたら、Instagramでご連絡ください。<br><a href="https://www.instagram.com/sru555555/" target="_blank" rel="noopener">Instagram @sru555555</a></p></section>
 
 <script>
 /* ---------- データ ---------- */
@@ -314,15 +320,18 @@ var DATA={
  weekend:{label:'土日祝ダイヤ',rev:'2026.7.25改正',
   to:[
    {id:'ka',name:'かがやき通り経由',stop:'3番',cls:'l-ka',ride:15,times:{8:[9,33],9:[9,33],10:[3,38],11:[2,37],12:[2,37],13:[2,37],14:[2,37],15:[2,37]}},
-   {id:'pn',name:'パナソニック西口・東口経由',stop:'4番',cls:'l-pe',ride:20,times:{7:[27,44],8:[1,19,24],9:[3,18,23],10:[22],11:[22],12:[22],13:[22],14:[22],15:[22],16:[22,54],17:[24,54],18:[24],19:[24],20:[24],21:[24]}},
+   {id:'pw',name:'パナソニック西口経由',stop:'4番',cls:'l-pw',ride:24,times:{8:[24],9:[23],10:[22],11:[22],12:[22],13:[22],14:[22],15:[22],16:[22],17:[24],18:[24],19:[24],20:[24],21:[24]}},
+   {id:'pe',name:'パナソニック東口経由',stop:'4番',cls:'l-pe',ride:15,times:{7:[27,44],8:[1,19],9:[3,18],16:[54],17:[54]}},
    {id:'f5',name:'立命館大学経由(松ヶ丘五丁目行)',stop:'5番',cls:'l-o',ride:15,times:{8:[55],9:[55],10:[52],11:[52],12:[52],13:[52],14:[52],15:[52]}}
   ],
   from:{
    minami:[
-    {id:'kb',name:'南草津駅行(かがやき・パナソニック経由)',stop:'2番',cls:'l-ka',ride:20,times:{9:[25,45,15,50],10:[25,45,5,15,35,50],11:[0,25,5,35],12:[0,30,5,35],13:[0,25,45,5,35],14:[0,25,55,5,35],15:[0,25,5,35],16:[0,25,45,5,35],17:[0,25,45,15,35],18:[0,25,45,15,35],19:[0,30,45,15],20:[0,30,45,15],21:[0,30,15]}}
+    {id:'ka',name:'かがやき通り経由',stop:'2番',cls:'l-ka',ride:15,times:{9:[25],10:[25],11:[0,25],12:[0,30],13:[0,25],14:[0,25],15:[0,25],16:[0,25],17:[0,25],18:[0,25],19:[0,30],20:[0,30],21:[0,30]}},
+    {id:'pw',name:'パナソニック西口経由',stop:'2番',cls:'l-pw',ride:24,times:{7:[45],8:[45],9:[45],10:[45],13:[45],14:[55],16:[45],17:[45],18:[45],19:[45],20:[45]}},
+    {id:'pe',name:'パナソニック東口経由',stop:'2番',cls:'l-pe',ride:15,times:{9:[15,50],10:[5,15,35,50],11:[5,35],12:[5,35],13:[5,35],14:[5,35],15:[5,35],16:[5,35],17:[15,35],18:[15,35],19:[15],20:[15],21:[15]}}
    ],
    kusatsu:[
-    {id:'ks',name:'草津駅・瀬田駅方面',stop:'1番',cls:'l-ks',times:{7:[45],8:[45],10:[45],12:[15],14:[15],15:[15],16:[45],18:[25],19:[15]}}
+    {id:'st',name:'瀬田駅行(P東口・笠山経由)',stop:'1番',cls:'l-o',times:{7:[45],8:[45],10:[45],12:[15],14:[15],15:[15],16:[45],18:[25],19:[15]}}
    ],
    other:[
     {id:'uc',name:'UCD-ARROW循環線',stop:'アクロスウィング前',cls:'l-ka',times:{7:['※07','※58'],9:['※33'],11:['※53'],13:['※33'],15:['※03'],16:['※43'],18:['※野25']}}
@@ -360,21 +369,55 @@ var JR={
  22:["2","10s","29s","31","50s"],
  23:["0大","10s西","30京","52京"]
 };
+var JRH={
+ 4:["59網"],5:["21","34京","45網"],6:["6網","20","34網","44","54s","59"],
+ 7:["8s播","14網","24s","29","39s","45加","53s","58網"],
+ 8:["4京","9s","15加","24s網","30網","36京","40s","44加","55s"],
+ 9:["1網","9s","15加","24s","31網","40s","47加","56s"],
+ 10:["2網","11s","17加","26s","32網","41s","47加","56s"],
+ 11:["2網","11s","17加","26s","32網","47加","56s"],
+ 12:["2網","11s","17加","26s","32網","47加","56s"],
+ 13:["2網","11s","17加","26s","32網","47網","56s"],
+ 14:["2網","11s","17網","26s","32網","47","56s"],
+ 15:["2","11s播","17網","26s","32網","45網","55s播"],
+ 16:["0","9s","15","24s播","31網","46","54s播"],
+ 17:["0","9s","16網","24s播","30網","40京","46","54s播"],
+ 18:["0網","7京","9s","15","24s播","30網","39s網","45網","54s播"],
+ 19:["0網","9s網","15","24s","30","39s","46播","54s"],
+ 20:["1加","9s上","21網","29s網","34京","43網","49s上"],
+ 21:["1","9s網","21上","30s","41","50s網"],
+ 22:["2","10s","29s","31","50s大"],
+ 23:["0大","10s西","30京","52京"]
+};
 var JRNAME={'網':'網干','加':'加古川','播':'播州赤穂','上':'上郡','京':'京都','大':'大阪','西':'西明石'};
-var JRL=(function(){var out=[];Object.keys(JR).forEach(function(h){JR[h].forEach(function(q){
+function buildJRL(J){var out=[];Object.keys(J).forEach(function(h){J[h].forEach(function(q){
   var x=q.match(/^(\d+)(s?)(.*)$/);out.push({t:+h*60+ +x[1],shin:!!x[2],d:x[3]?JRNAME[x[3]]:'姫路',a:x[3]||''})})});
-  out.sort(function(a,b){return a.t-b.t});return out})();
-var HOL=['2026-11-03','2026-11-23','2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22'];
-var OPEN=[['2026-09-28','2026-12-25'],['2027-01-06','2027-01-22']];
+  out.sort(function(a,b){return a.t-b.t});return out}
+var JRL_WD=buildJRL(JR),JRL_HD=buildJRL(JRH);
+function jrl(m){return m==='weekend'?JRL_HD:JRL_WD}
+var HOL=['2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22'];
+/* 直行シャトルバス運行カレンダー(提供画像)。o=○運行(平日ダイヤ) t=△臨時運行予定(祝日・平日ダイヤ) u=※臨時運行未定。×(運休)は載せない */
+var CAL_O=[['2026-09-28','2026-09-30'],['2026-10-01','2026-10-02'],['2026-10-05','2026-10-09'],['2026-10-13','2026-10-16'],['2026-10-19','2026-10-23'],['2026-10-26','2026-10-30'],
+ ['2026-11-02','2026-11-02'],['2026-11-04','2026-11-06'],['2026-11-09','2026-11-13'],['2026-11-16','2026-11-20'],['2026-11-24','2026-11-27'],['2026-11-30','2026-11-30'],
+ ['2026-12-01','2026-12-04'],['2026-12-07','2026-12-11'],['2026-12-14','2026-12-18'],['2026-12-21','2026-12-25'],['2027-01-06','2027-01-08'],['2027-01-12','2027-01-15'],['2027-01-18','2027-01-22']];
+var CAL_T=['2026-10-12','2026-11-03','2026-11-23'];
+var CAL_U=['2026-11-07','2026-12-19','2027-01-16','2027-01-23','2027-01-25'];
+function calTag(s){for(var i=0;i<CAL_O.length;i++)if(s>=CAL_O[i][0]&&s<=CAL_O[i][1])return 'o';
+  if(CAL_T.indexOf(s)>=0)return 't';if(CAL_U.indexOf(s)>=0)return 'u';return ''}
 var WD=['日','月','火','水','木','金','土'];
 
 /* ---------- 関数 ---------- */
 function p2(n){return (n<10?'0':'')+n}
 function ymd(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
 function autoMode(d){var s=ymd(d),w=d.getDay();
-  if(w===0||w===6||HOL.indexOf(s)>=0)return 'off';
-  for(var i=0;i<OPEN.length;i++)if(s>=OPEN[i][0]&&s<=OPEN[i][1])return 'weekday';
+  var c=calTag(s);
+  if(c==='o'||c==='t')return 'weekday';
+  if(w===0||w===6||HOL.indexOf(s)>=0)return 'weekend';
   return 'off'}
+function dayNote(d){if(S.mode!=='auto')return '';var c=calTag(ymd(d));
+  if(c==='t')return '<div class="note">本日は祝日ですが、直行シャトルバスの臨時運行予定日です。平日ダイヤで表示しています。運行する時間帯は、各のりばの告知で確認してください。</div>';
+  if(c==='u')return '<div class="note">本日は、直行シャトルバスの臨時運行が未定の日です。土日祝ダイヤ(シャトルなし)で表示しています。運行する場合は、各のりばの告知を確認してください。</div>';
+  return ''}
 function parseT(v){if(typeof v==='number')return {m:v,tag:''};
   var x=v.match(/(\d+)$/);return {m:+x[1],tag:v.slice(0,v.length-x[1].length)}}
 function entries(lines,hidden){var out=[],seen={};
@@ -403,19 +446,20 @@ function ttKey(){return S.dir==='to'?'to':'from-'+S.dest}
 function renderBus(d,m){
   var h='';
   if(m==='off'){
-    return '<div class="note">このアプリは今のところ平日(開講期間)専用です。土日祝と休講期間のダイヤは未対応です。公式の時刻表は<a href="https://www.ohmitetudo.co.jp/bus/guide/minakusa-ritumei/" target="_blank" rel="noopener">近江鉄道のページ</a>で確認できます。</div>'+
+    return '<div class="note">いまは、休講期間の平日です。このアプリは、平日(開講期間)と土日祝のダイヤに対応しています。休講期間の平日ダイヤは未対応です。公式の時刻表は<a href="https://www.ohmitetudo.co.jp/bus/guide/minakusa-ritumei/" target="_blank" rel="noopener">近江鉄道のページ</a>で確認できます。</div>'+
     '<div class="row" style="justify-content:flex-start"><button class="chip" data-mode="weekday" style="font-weight:700">平日ダイヤを参考に見る</button></div>'}
   var D=DATA[m],lines=curLines(m),nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,nowSec=nowMin*60;
-  var canKind=(S.dir==='to'||S.dest==='minami'),hid={};
-  if(canKind&&S.kind!=='all')lines.forEach(function(L){if((S.kind==='sh')!==(L.id==='sh'))hid[L.id]=true});
+  var canKind=(S.dir==='to'||S.dest==='minami'),hid={},hasSh=lines.some(function(L){return L.id==='sh'});
+  if(canKind&&hasSh&&S.kind!=='all')lines.forEach(function(L){if((S.kind==='sh')!==(L.id==='sh'))hid[L.id]=true});
   var all=entries(lines,hid),nx=all.filter(function(e){return e.t>=nowMin-0.001}),goal=S.dir==='to'?'BKC':'南草津駅';
+  h+=dayNote(d);
   h+='<div class="seg" role="group" aria-label="方向"><button data-dir="to" aria-pressed="'+(S.dir==='to')+'">南草津駅 → BKC</button><button data-dir="from" aria-pressed="'+(S.dir==='from')+'">BKC → 駅・その他</button></div>';
   h+='<div class="subrow">';
   if(S.dir==='from')h+='<div class="chips" role="group" aria-label="行き先">'+DESTS.map(function(x){return '<button class="tchip" data-dest="'+x.id+'" aria-pressed="'+(S.dest===x.id)+'">'+x.name+'</button>'}).join('')+'</div>';
-  if(canKind)h+='<div class="chips" role="group" aria-label="種類">'+[['all','全て'],['sh','直行シャトル'],['via','経由便']].map(function(x){return '<button class="tchip" data-kind="'+x[0]+'" aria-pressed="'+(S.kind===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
+  if(canKind&&hasSh)h+='<div class="chips" role="group" aria-label="種類">'+[['all','全て'],['sh','直行シャトル'],['via','経由便']].map(function(x){return '<button class="tchip" data-kind="'+x[0]+'" aria-pressed="'+(S.kind===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
   h+='</div>';
   if(!nx.length){
-    h+='<div class="empty">本日の運行は終了しました。</div>'
+    h+='<div class="empty">'+(all.length?'本日の運行は終了しました。':'この方面の便はありません。')+'</div>'
   }else{
     var cand=nx.slice(0,5),first=cand[0],bestK=-1,bestA=1e9;
     cand.forEach(function(e,i){if(e.line.ride&&canKind&&e.t+e.line.ride<bestA){bestA=e.t+e.line.ride;bestK=i}});
@@ -437,18 +481,19 @@ function renderBus(d,m){
   h+=footer(m);return h}
 function tagNote(t){return {'※':'運行日はカレンダーで確認','立':'立命館大学を経由','野':'バイパス野路止まり','※野':'運行日はカレンダー確認・野路止まり'}[t]||t}
 function footer(m){
-  var warn=m==='weekend'?'<li>土日祝の時刻表は公式PDFの文字データから作成しました。列の割り当て(特にBKC発の草津駅・瀬田駅方面と、南草津駅発4番のパナソニック西口/東口の区別)は推定を含みます。乗る前に公式PDFで確認してください。</li>':'';
+  var wk=m==='weekend';
   return '<details class="card"><summary>データについて</summary><ul>'+
-   '<li>ダイヤ: '+DATA[m].label+'('+DATA[m].rev+')。提供された時刻表画像から作成しています。現在は平日(開講期間)専用です。</li>'+warn+
-   '<li>平日の8時台シャトル(南草津発)の16分と23分は、画像で2回ずつ記載されていますが、1便として表示しています。</li>'+
-   '<li>土日祝、休講期間、休日授業日の臨時便、運休・遅延は反映していません。</li>'+
+   '<li>ダイヤ: '+DATA[m].label+'('+DATA[m].rev+')。提供された時刻表画像から作成しています。対応しているのは、平日(開講期間)と土日祝です。</li>'+
+   (wk?'<li>土日祝は、直行シャトルバスの運行がありません。BKC発の草津駅行きは全便運休です。南草津駅発5番(松ヶ丘五丁目行)のうち、「立」の付かない便(18時台・19時台の39分)は、BKCを通らないため含めていません。</li>':'<li>平日の8時台シャトル(南草津発)の16分と23分は、画像で2回ずつ記載されていますが、1便として表示しています。</li>')+
+   '<li>平日ダイヤと土日祝ダイヤの切り替えは、直行シャトルバスの運行カレンダー(2026年9月〜2027年1月)に合わせています。祝日でも運行する日(△)は平日ダイヤ、運行未定の日(※)は土日祝ダイヤで表示します。</li>'+
+   '<li>休講期間の平日、休日授業日の臨時便、運休・遅延は反映していません。</li>'+
    '<li>駅着・BKC着の時刻は、バスの所要時間(目安: シャトル約12分、かがやき通り・パナソニック東口経由約15分、パナソニック西口経由約24分)を足した概算です。</li></ul>'+
    '<p class="src" style="font-size:13px;margin:8px 0 0">公式: <a href="https://www.ohmitetudo.co.jp/bus/guide/minakusa-ritumei/" target="_blank" rel="noopener">南草津駅－立命館大学 時刻表(近江鉄道)</a> ／ <a href="https://www.ohmitetudo.co.jp/bus/guide/kusatsu-ritumei/rinjibus/" target="_blank" rel="noopener">休日授業日の臨時便</a></p></details>'}
 
 function fmtN(t){t=Math.round(t);return (t>=1440?'翌':'')+fmt(t)}
 function reach(x,id){if(x.d==='京都')return id==='kyoto';if(x.d==='大阪')return id!=='sannomiya';return true}
-function jrRows(ready,T){
-  var cand=JRL.filter(function(x){return x.t>=ready&&reach(x,T.id)}).slice(0,4);
+function jrRows(ready,T,m){
+  var cand=jrl(m).filter(function(x){return x.t>=ready&&reach(x,T.id)}).slice(0,4);
   if(!cand.length)return '<div class="empty">この時刻以降に乗れる電車が登録されていません。4時より前と、24時以降は未登録です。</div>';
   var best=0;cand.forEach(function(x,i){if(x.t+(x.shin?T.sh:T.fu)<cand[best].t+(cand[best].shin?T.sh:T.fu))best=i});
   return cand.map(function(x,i){var mn=x.shin?T.sh:T.fu;
@@ -456,58 +501,57 @@ function jrRows(ready,T){
 function renderTr(d,m){
   var T=TRAINS.filter(function(x){return x.id===S.tdest})[0]||TRAINS[0],h='';
   var nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
-  if(m==='off')h+='<div class="note">いまは平日(開講期間)ではありません。このアプリは平日専用のため、電車の表示は平日ダイヤの参考です。</div>';
+  if(m==='off')h+='<div class="note">いまは休講期間の平日です。休講期間のダイヤは未対応のため、電車の表示は平日ダイヤの参考です。</div>';
   h+='<section><h2>行き先(南草津駅から)</h2><div class="dests">'+TRAINS.map(function(x){
     return '<button class="dst" data-td="'+x.id+'" aria-pressed="'+(x.id===S.tdest)+'"><b>'+x.name+'</b><span>普通 '+x.fu+'分 ・ 新快速 '+x.sh+'分</span></button>'}).join('')+'</div></section>';
   h+='<div class="seg" role="group" aria-label="出発地"><button data-tf="bkc" aria-pressed="'+(S.tfrom==='bkc')+'">BKCから</button><button data-tf="st" aria-pressed="'+(S.tfrom==='st')+'">南草津駅から</button></div>';
   if(S.tfrom==='st'){
-    h+='<section><h2>'+fmt(nowMin)+' 以降の電車('+T.name+'方面)</h2><div class="card"><div class="plan">'+jrRows(nowMin,T)+'</div></div></section>';
+    h+='<section><h2>'+fmt(nowMin)+' 以降の電車('+T.name+'方面)</h2><div class="card"><div class="plan">'+jrRows(nowMin,T,m)+'</div></div></section>';
   }else{
     h+='<section><h2>BKCから'+T.name+'へ</h2><div class="plan">';
     var D=DATA[m];
-    if(!D)h+='<div class="note">バスのダイヤは平日(開講期間)のみ対応しています。バス時刻表タブで「平日ダイヤを参考に見る」を選ぶと表示できます。</div>';
+    if(!D)h+='<div class="note">休講期間の平日のバスダイヤは未対応です。バス時刻表タブで「平日ダイヤを参考に見る」を選ぶと表示できます。</div>';
     else{
       var bs=entries(D.from.minami,{}).filter(function(e){return e.t>=nowMin-0.001}).slice(0,2);
       if(!bs.length)h+='<div class="empty">本日のBKC発バスは終了しました。</div>';
       bs.forEach(function(e){var arr=e.t+(e.line.ride||15),ready=arr+5;
-        h+='<div class="card"><div class="plan"><div class="leg"><div class="tt2">'+fmt(arr)+'<small>南草津駅着 約</small></div><div class="bd '+e.line.cls+'"><b>BKC '+fmt(e.t)+'発のバス</b><p>'+e.line.name+'。ホームまで5分とみて '+fmt(ready)+' 以降の電車に乗れます。</p></div></div>'+jrRows(ready,T)+'</div></div>'})}
+        h+='<div class="card"><div class="plan"><div class="leg"><div class="tt2">'+fmt(arr)+'<small>南草津駅着 約</small></div><div class="bd '+e.line.cls+'"><b>BKC '+fmt(e.t)+'発のバス</b><p>'+e.line.name+'。ホームまで5分とみて '+fmt(ready)+' 以降の電車に乗れます。</p></div></div>'+jrRows(ready,T,m)+'</div></div>'})}
     h+='</div></section>';
   }
-  h+='<div class="note">電車の時刻は、提供された南草津駅の時刻表(姫路方面・4〜23時台)から作っています。特急は含めていません。平日ダイヤとして扱っています。到着時刻は発車時刻に、普通と新快速それぞれの一律の所要分を足した計算値です。京都行・大阪行の電車は、その先の駅へは行きません。</div>';
+  h+='<div class="note">電車の時刻は、提供された南草津駅の時刻表(姫路方面・4〜23時台)から作っています。特急は含めていません。'+(m==='weekend'?'土日祝のダイヤを使っています。':'平日ダイヤとして扱っています。')+'到着時刻は発車時刻に、普通と新快速それぞれの一律の所要分を足した計算値です。京都行・大阪行の電車は、その先の駅へは行きません。</div>';
   return h}
 
 var TTS=[{id:'to',name:'南草津駅 → BKC'},{id:'from-minami',name:'BKC → 南草津駅'},{id:'from-kusatsu',name:'BKC → 草津駅・瀬田駅'},{id:'from-other',name:'BKC → その他'},{id:'jr',name:'JR 南草津駅'}];
-function ttLines(){var D=DATA.weekday;return S.tt==='to'?D.to:S.tt==='from-minami'?D.from.minami:S.tt==='from-kusatsu'?D.from.kusatsu:D.from.other}
+function ttLines(m){var D=DATA[m==='weekend'?'weekend':'weekday'];return S.tt==='to'?D.to:S.tt==='from-minami'?D.from.minami:S.tt==='from-kusatsu'?D.from.kusatsu:D.from.other}
 function hourGrid(es,nowMin,curH){var by={};es.forEach(function(e){(by[e.h]=by[e.h]||[]).push(e)});
   return Object.keys(by).map(Number).sort(function(a,b){return a-b}).map(function(hh){
     return '<div class="hr'+(hh===curH?' cur':'')+'"><div class="h">'+p2(hh)+'</div><div class="mins">'+by[hh].map(function(e){
       return '<span class="m '+e.line.cls+(e.t<nowMin?' past':'')+'">'+tagHtml(e.tag)+p2(e.m)+'</span>'}).join('')+'</div></div>'}).join('')}
-function jrGrid(nowMin,curH){var by={};JRL.forEach(function(x){var hh=Math.floor(x.t/60);(by[hh]=by[hh]||[]).push(x)});
+function jrGrid(nowMin,curH,m){var by={};jrl(m).forEach(function(x){var hh=Math.floor(x.t/60);(by[hh]=by[hh]||[]).push(x)});
   return Object.keys(by).map(Number).sort(function(a,b){return a-b}).map(function(hh){
     return '<div class="hr'+(hh===curH?' cur':'')+'"><div class="h">'+p2(hh)+'</div><div class="mins">'+by[hh].map(function(x){
       return '<span class="m '+(x.shin?'shin':'l-ks')+(x.t<nowMin?' past':'')+'">'+p2(x.t%60)+(x.a?'<i class="d">'+x.a+'</i>':'')+'</span>'}).join('')+'</div></div>'}).join('')}
 function renderTT(d,m){
-  var nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,curH=d.getHours(),h='';
-  if(m==='off')h+='<div class="note">いまは平日(開講期間)ではありません。このアプリは平日専用のため、表示は平日ダイヤの参考です。</div>';
+  var nowMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,curH=d.getHours(),h='',dm=m==='weekend'?'weekend':'weekday';
+  if(m==='off')h+='<div class="note">いまは休講期間の平日です。休講期間のダイヤは未対応のため、表示は平日ダイヤの参考です。</div>';
   h+='<div class="chips" role="group" aria-label="時刻表の選択">'+TTS.map(function(x){return '<button class="tchip" data-tt="'+x.id+'" aria-pressed="'+(S.tt===x.id)+'">'+x.name+'</button>'}).join('')+'</div>';
   if(S.tt==='jr'){
-    h+='<section class="card"><div class="tt-h"><b>JR琵琶湖線 南草津駅</b><span class="sub">京都・大阪方面(姫路方面行き)</span></div><div class="sub" style="margin-bottom:6px">'+JRL.length+'本 ・ 4〜23時台 ・ 平日</div><div class="tt">'+jrGrid(nowMin,curH)+'</div></section>';
+    h+='<section class="card"><div class="tt-h"><b>JR琵琶湖線 南草津駅</b><span class="sub">京都・大阪方面(姫路方面行き)</span></div><div class="sub" style="margin-bottom:6px">'+jrl(m).length+'本 ・ 4〜23時台 ・ '+(m==='weekend'?'土日祝':'平日')+'</div><div class="tt">'+jrGrid(nowMin,curH,m)+'</div></section>';
     h+='<div class="legend"><span><b class="shinkey">橙</b> 新快速</span><span><b>灰</b> 普通</span><span>行先: 網=網干 加=加古川 播=播州赤穂 上=上郡 京=京都 大=大阪 西=西明石(なしは姫路行)</span></div>';
     h+='<div class="note">京都行・大阪行の電車は、その先の駅へは行きません。特急は含めていません。</div>';
     return h}
-  var lines=ttLines(),arrive=(S.tt==='to'||S.tt==='from-minami'),tags={};
+  var lines=ttLines(m),arrive=(S.tt==='to'||S.tt==='from-minami'),tags={};
   lines.forEach(function(L){var es=entries([L],{});if(!es.length)return;
     es.forEach(function(e){if(e.tag)tags[e.tag]=1});
     h+='<section class="card"><div class="tt-h"><b>'+L.name+'</b><span class="sub">のりば '+L.stop+(arrive&&L.ride?' ・ 所要 約'+L.ride+'分':'')+'</span></div><div class="sub" style="margin-bottom:6px">'+es.length+'本 ・ 始発 '+fmt(es[0].t)+' ・ 最終 '+fmt(es[es.length-1].t)+'</div><div class="tt">'+hourGrid(es,nowMin,curH)+'</div></section>'});
   var tk=Object.keys(tags);
   if(tk.length)h+='<div class="legend">'+tk.map(function(t){return '<span><b>'+t+'</b> '+tagNote(t)+'</span>'}).join('')+'</div>';
-  h+='<div class="legend"><span>平日・開講ダイヤ('+DATA.weekday.rev+')。薄い数字は発車済みです。</span></div>';
+  h+='<div class="legend"><span>'+DATA[dm].label+'('+DATA[dm].rev+')。薄い数字は発車済みです。</span></div>';
   return h}
 
 var NEWS=[
- {d:'2026-10-28',t:'公開しました。現在は平日(開講期間)のダイヤのみ対応しています。'},
- {d:'2026-10-28',t:'JRの時刻は4〜23時台です。特急は含めていません。'},
- {d:'2026-10-28',t:'土日祝、休講期間、臨時ダイヤ、運休・遅延には対応していません。'}
+ {d:'2026-10-28',t:'土日祝(休日)のダイヤに対応しました。'},
+ {d:'2026-10-28',t:'公開しました。'}
 ];
 function renderNews(){
   var el=document.getElementById('news');if(!el)return;
@@ -522,9 +566,9 @@ function renderSet(d,m){
     '<div class="setrow"><label>時刻を指定 <input type="time" id="timeSel" value="'+S.time+'"></label><button class="chip tsetb" data-tset="1">設定</button><button class="chip" data-treset="1">現在時刻に戻す</button></div>'+
     '<p class="sub">時刻を選んだあと、「設定」を押すと反映されます。その時刻を基準に「次のバス」と電車を表示し、指定中はカウントダウンが止まります。</p></section>';
   h+='<section class="card"><h2>ダイヤ</h2>'+
-    '<div class="setrow"><label>切り替え <select id="modeSel"><option value="auto"'+(S.mode==='auto'?' selected':'')+'>自動</option><option value="weekday"'+(S.mode==='weekday'?' selected':'')+'>平日(開講)</option></select></label></div>'+
-    '<div class="setnow"><span class="sub">いまのダイヤ</span><span class="pill">'+(m==='off'?'平日専用(いまは対象外)':DATA[m].label)+'</span></div>'+
-    '<p class="sub">土日祝と休講期間は未対応です。「自動」では、平日の開講期間だけダイヤを表示します。</p></section>';
+    '<div class="setrow"><label>切り替え <select id="modeSel"><option value="auto"'+(S.mode==='auto'?' selected':'')+'>自動</option><option value="weekday"'+(S.mode==='weekday'?' selected':'')+'>平日(開講)</option><option value="weekend"'+(S.mode==='weekend'?' selected':'')+'>土日祝</option></select></label></div>'+
+    '<div class="setnow"><span class="sub">いまのダイヤ</span><span class="pill">'+(m==='off'?'休講期間の平日(未対応)':DATA[m].label)+'</span></div>'+
+    '<p class="sub">休講期間の平日は未対応です。「自動」では、直行シャトルバスの運行カレンダーと日付に合わせて、平日と土日祝のダイヤを切り替えます。</p></section>';
   return h}
 
 function render(){
