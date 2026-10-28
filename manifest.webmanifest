@@ -1,0 +1,15 @@
+{
+  "name": "BKCバスナビ",
+  "short_name": "BKCバス",
+  "description": "南草津駅とBKCのバス時刻表と乗り換え案内(非公式)",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "lang": "ja",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
